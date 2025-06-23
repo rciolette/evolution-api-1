@@ -1,13 +1,2 @@
-SERVER_TYPE=http
-SERVER_PORT=8080
-SERVER_URL=http://api.rcdigitais.com.br
-
-DATABASE_PROVIDER=postgresql
-DATABASE_URL=postgresql://postgres:postgres@postgres:5432/evolution?schema=public
-
-CACHE_REDIS_URI=redis://redis:6379/6
-
-EVOLUTION_TOKEN=C6B18B815E2D-4BE9-B9E3-25348D2B617D
-WEBHOOK_URL=
-
-AUTHENTICATION_API_KEY=429683C4C977415CAAFCCE10F7D57E11
+[remote "origin"]
+	url = git@github.com:rciolette/Evolution-api-main.git
