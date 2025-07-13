@@ -1,10 +1,10 @@
 {
-  "name": "evolution-api",
-  "version": "2.3.0",
-  "description": "Rest api for communication with WhatsApp",
-  "main": "./dist/main.js",
-  "type": "commonjs",
+  "name": "your-project-name",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
   "scripts": {
+    "dev": "ts-node-dev ./src/main.ts",
     "build": "tsc --noEmit && tsup",
     "start": "tsnd -r tsconfig-paths/register --files --transpile-only ./src/main.ts",
     "start:prod": "node dist/main",
@@ -123,5 +123,6 @@
     "ts-node-dev": "^2.0.0",
     "tsconfig-paths": "^4.2.0",
     "typescript": "^5.7.2"
-  }
+  },
+  "type": "commonjs"
 }
