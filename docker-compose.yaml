@@ -1,93 +1,52 @@
-services:
-  api:
-    container_name: evolution_api
-    image: evoapicloud/evolution-api:latest
-    restart: always
-    depends_on:
-      - redis
-      - postgres
-    ports:
-      - "8082:8082"
-    volumes:
-      - evolution_instances:/evolution/instances
-    networks:
-      - evolution-net
-    env_file:
-      - .env
-    expose:
-      - 8082
-    environment:
-      - NODE_ENV=production
-      - BASE_URL=https://api.rcdigitais.com.br
+server {
+    listen 80;
+    server_name api.rcdigitais.com.br;
 
-  redis:
-    image: redis:latest
-    networks:
-      - evolution-net
-    container_name: redis
-    command: >
-      redis-server --port 6379 --appendonly yes
-    volumes:
-      - evolution_redis:/data
-    ports:
-      - 6379:6379
+    location /.well-known/acme-challenge/ {
+        root /var/www/certbot;
+    }
 
-  postgres:
-    container_name: postgres
-    image: postgres:15
-    networks:
-      - evolution-net
-    command: ["postgres", "-c", "max_connections=1000", "-c", "listen_addresses=*"]
-    restart: always
-    ports:
-      - 5432:5432
-    environment:
-      - POSTGRES_USER=user
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-      - POSTGRES_DB=evolution
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    expose:
-      - 5432
+    location / {
+        proxy_pass http://evolution_api:8082;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_cache_bypass $http_upgrade;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-Host $host;
+        proxy_set_header X-Forwarded-Port $server_port;
+        proxy_set_header X-Forwarded-Server $host;
+        proxy_redirect off;
+        proxy_read_timeout 90;
+        proxy_send_timeout 90;
+    }
+}
 
-  evolution-api-local:
-    container_name: evolution_api_local
-    image: evoapicloud/evolution-api:latest
-    restart: always
-    depends_on:
-      - redis
-      - postgres
-    ports:
-      - 8081:8080
-    volumes:
-      - evolution_instances:/evolution/instances
-      - /etc/letsencrypt:/etc/letsencrypt:ro
-    networks:
-      - evolution-net
-    environment:
-      - CACHE_REDIS_URI=${CACHE_REDIS_URI}
+server {
+    listen 443 ssl;
+    server_name api.rcdigitais.com.br;
 
-  nginx:
-    image: nginx:alpine
-    restart: always
-    volumes:
-      - ./nginx.conf:/etc/nginx/nginx.conf
-      - /etc/letsencrypt:/etc/letsencrypt:ro
-    ports:
-      - "80:80"
-      - "443:443"
-    depends_on:
-      - evolution-api-local
-    networks:
-      - evolution-net
+    ssl_certificate /etc/letsencrypt/live/api.rcdigitais.com.br/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/api.rcdigitais.com.br/privkey.pem;
 
-volumes:
-  evolution_instances:
-  evolution_redis:
-  postgres_data:
-
-
-networks:
-  evolution-net:
-    name: evolution-net
-    driver: bridge
+    location / {
+        proxy_pass http://evolution_api:8082;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_cache_bypass $http_upgrade;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-Host $host;
+        proxy_set_header X-Forwarded-Port $server_port;
+        proxy_set_header X-Forwarded-Server $host;
+        proxy_redirect off;
+        proxy_read_timeout 90;
+        proxy_send_timeout 90;
+    }
+}
