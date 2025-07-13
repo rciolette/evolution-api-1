@@ -10,6 +10,7 @@ services:
       - 8080:8080
     volumes:
       - evolution_instances:/evolution/instances
+      - /etc/letsencrypt:/etc/letsencrypt:ro
     networks:
       - evolution-net
     env_file:
