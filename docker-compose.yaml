@@ -7,7 +7,7 @@ services:
       - redis
       - postgres
     ports:
-      - 8080:8080
+      - "8082:8082"
     volumes:
       - evolution_instances:/evolution/instances
     networks:
@@ -15,7 +15,10 @@ services:
     env_file:
       - .env
     expose:
-      - 8080
+      - 8082
+    environment:
+      - NODE_ENV=production
+      - BASE_URL=https://api.rcdigitais.com.br
 
   redis:
     image: redis:latest
@@ -40,13 +43,43 @@ services:
       - 5432:5432
     environment:
       - POSTGRES_USER=user
-      - POSTGRES_PASSWORD=pass
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
       - POSTGRES_DB=evolution
-      - POSTGRES_HOST_AUTH_METHOD=trust
     volumes:
       - postgres_data:/var/lib/postgresql/data
     expose:
       - 5432
+
+  evolution-api-local:
+    container_name: evolution_api_local
+    image: evoapicloud/evolution-api:latest
+    restart: always
+    depends_on:
+      - redis
+      - postgres
+    ports:
+      - 8081:8080
+    volumes:
+      - evolution_instances:/evolution/instances
+      - /etc/letsencrypt:/etc/letsencrypt:ro
+    networks:
+      - evolution-net
+    environment:
+      - CACHE_REDIS_URI=${CACHE_REDIS_URI}
+
+  nginx:
+    image: nginx:alpine
+    restart: always
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf
+      - /etc/letsencrypt:/etc/letsencrypt:ro
+    ports:
+      - "80:80"
+      - "443:443"
+    depends_on:
+      - evolution-api-local
+    networks:
+      - evolution-net
 
 volumes:
   evolution_instances:
