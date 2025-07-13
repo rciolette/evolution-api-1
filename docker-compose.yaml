@@ -1,44 +1,72 @@
-version: "3.8"
 services:
   api:
-    container_name: api
-    build:
-      context: .
-      dockerfile: Dockerfile
+    container_name: evolution_api
+    image: evoapicloud/evolution-api:latest
+    restart: always
+    depends_on:
+      - redis
+      - postgres
     ports:
       - "8080:8080"
+    volumes:
+      - evolution_instances:/evolution/instances
+      - /etc/letsencrypt:/etc/letsencrypt:ro
+    networks:
+      - evolution-net
     env_file:
       - .env
-    depends_on:
-      - postgres
-      - redis
-
-  postgres:
-    image: postgres:13
-    environment:
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: ${POSTGRES_DB}
-    volumes:
-      - pgdata:/var/lib/postgresql/data
+      - .env.local
+    expose:
+      - 8080
 
   redis:
-    image: redis:6
+    image: redis:latest
+    container_name: redis
+    command: ["redis-server", "--port", "6379", "--appendonly", "yes"]
     volumes:
-      - redisdata:/data
+      - evolution_redis:/data
+    ports:
+      - "6379:6379"
+    networks:
+      - evolution-net
+
+  postgres:
+    container_name: postgres
+    image: postgres:15
+    restart: always
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=rciolette
+      - POSTGRES_PASSWORD=Raphael106612
+      - POSTGRES_DB=evolution
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    expose:
+      - 5432
+    networks:
+      - evolution-net
 
   nginx:
     image: nginx:latest
+    container_name: evolution_nginx
     ports:
       - "80:80"
       - "443:443"
     volumes:
-      - ./nginx/conf.d:/etc/nginx/conf.d
-      - ./certs:/etc/letsencrypt
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf
+      - /etc/letsencrypt:/etc/letsencrypt:ro
     depends_on:
       - api
-    restart: always
+    networks:
+      - evolution-net
 
 volumes:
-  pgdata:
-  redisdata:
+  evolution_instances:
+  evolution_redis:
+  postgres_data:
+
+networks:
+  evolution-net:
+    name: evolution-net
+    driver: bridge
